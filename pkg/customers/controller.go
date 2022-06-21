@@ -20,6 +20,6 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 	routes.GET("/", h.GetCustomers)
 	routes.GET("/:id", h.GetCustomer)
 
-	routes.PUT("/update/:id", h.UpdateCustomer)
+	routes.PUT("/update/", h.UpdateCustomer)
 	routes.DELETE("/delete/:id", h.Deletecustomer)
 }

@@ -1,6 +1,7 @@
 package customers
 
 import (
+	"github.com/Singh555/mycms/common/helper"
 	"net/http"
 
 	"github.com/Singh555/mycms/common/models"
@@ -8,21 +9,22 @@ import (
 )
 
 type UpdateCustomerRequestBody struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
+	Id        int64  `form:"id" binding:"required"`
+	FirstName string `form:"first_name"`
+	LastName  string `form:"last_name"`
+	Email     string `form:"email" binding:"email"`
 	//Mobile    string `json:"mobile"`
-	Address string `json:"address"`
+	Address string `form:"address"` //use json when request from postman is json data
 }
 
 func (h handler) UpdateCustomer(c *gin.Context) {
-	id := c.Param("id")
+
 	body := UpdateCustomerRequestBody{}
-	body.FirstName = c.PostForm("first_name")
-	body.LastName = c.PostForm("last_name")
-	body.Email = c.PostForm("email")
+	//body.FirstName = c.PostForm("first_name")
+	//body.LastName = c.PostForm("last_name")
+	//body.Email = c.PostForm("email")
 	//body.Mobile = c.PostForm("mobile")
-	body.Address = c.PostForm("address")
+	//body.Address = c.PostForm("address")
 	//body.Password = c.PostForm("password")
 	/*
 		var FirstName = c.PostForm("first_name")
@@ -33,17 +35,16 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 		var Password = c.PostForm("password")
 	*/
 	// getting request's body
-	/*
-		if err := c.BindJSON(&body); err != nil {
-			c.AbortWithError(http.StatusBadRequest, err)
-			return
-		}
-	*/
 
+	if err := c.ShouldBind(&body); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorResponse(err))
+		return
+	}
+	id := body.Id
 	var customer models.Customer
 
 	if result := h.DB.First(&customer, id); result.Error != nil {
-		c.AbortWithError(http.StatusNotFound, result.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while getting customer data", "error": result.Error})
 		return
 	}
 
@@ -54,7 +55,8 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 	customer.Address = body.Address
 	result := h.DB.Save(&customer)
 	if result.Error != nil {
-		c.AbortWithError(http.StatusBadRequest, result.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while updating customer data", "error": result.Error})
+
 		return
 	}
 

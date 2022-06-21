@@ -1,6 +1,8 @@
 package customers
 
 import (
+	"fmt"
+	"github.com/Singh555/mycms/common/helper"
 	"github.com/Singh555/mycms/common/models"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -8,22 +10,24 @@ import (
 )
 
 type AddCustomerRequestBody struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `json:"email"`
-	Mobile    string `json:"mobile"`
-	Address   string `json:"address"`
-	Password  string `json:"password"`
+	FirstName string `form:"first_name" binding:"required"`
+	LastName  string `form:"last_name" binding:"required"`
+	Email     string `form:"email" binding:"email"`
+	Mobile    string `form:"mobile" binding:"required,min=10,max=12"`
+	Address   string `form:"address" binding:"required"` //use json when request from postman is json data
+	Password  string `form:"password" binding:"required,min=8"`
 }
 
 func (h handler) AddCustomer(c *gin.Context) {
 	body := AddCustomerRequestBody{}
-	body.FirstName = c.PostForm("first_name")
-	body.LastName = c.PostForm("last_name")
-	body.Email = c.PostForm("email")
-	body.Mobile = c.PostForm("mobile")
-	body.Address = c.PostForm("address")
-	body.Password = c.PostForm("password")
+	/*
+		body.FirstName = c.PostForm("first_name")
+		body.LastName = c.PostForm("last_name")
+		body.Email = c.PostForm("email")
+		body.Mobile = c.PostForm("mobile")
+		body.Address = c.PostForm("address")
+		body.Password = c.PostForm("password")
+	*/
 	/*
 		var FirstName = c.PostForm("first_name")
 		var LastName = c.PostForm("last_name")
@@ -34,19 +38,29 @@ func (h handler) AddCustomer(c *gin.Context) {
 	*/
 
 	// getting request's body
-	/*
-		if err := c.BindJSON(&body); err != nil {
-			fmt.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"message": "validation error", "error": err})
-			return
-		}
-	*/
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 8)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while password hashing", "error": err})
+
+	if err := c.ShouldBind(&body); err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, helper.ErrorResponse(err))
 		return
 	}
 
+	var checkCustomer models.Customer
+	var count int64
+	if err := h.DB.Model(&checkCustomer).Select("id").Where("mobile", body.Mobile).Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorResponse(err))
+		return
+	}
+	if count > 0 {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Customer Already exists", "error": ""})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(body.Password), 8)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorResponse(err))
+		return
+	}
 	var customer models.Customer
 
 	customer.FirstName = body.FirstName
@@ -57,7 +71,8 @@ func (h handler) AddCustomer(c *gin.Context) {
 	customer.Password = string(hashedPassword)
 
 	if result := h.DB.Create(&customer); result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "error while inserting data", "error": result.Error})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while inserting customer data", "error": result.Error})
+
 		return
 	}
 

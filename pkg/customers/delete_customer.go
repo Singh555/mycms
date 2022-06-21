@@ -14,8 +14,9 @@ func (h handler) Deletecustomer(c *gin.Context) {
 	var customer models.Customer
 
 	if result := h.DB.First(&customer, id); result.Error != nil {
-		c.AbortWithError(http.StatusNotFound, result.Error)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while deleting customer data", "error": result.Error})
 		return
+
 	}
 
 	result := h.DB.Delete(&customer)

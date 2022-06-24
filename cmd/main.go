@@ -22,7 +22,7 @@ func main() {
 	dbUrl := dbDriver + "://" + dbUserName + ":" + dbPassword + "@" + dbHost + ":" + dbPort + "/" + dbDatabase
 	r := gin.Default()
 	h := db.Init(dbUrl)
-
+	r.Static("/satic_files/", "../")
 	customers.RegisterRoutes(r, h)
 	// register more routes here
 

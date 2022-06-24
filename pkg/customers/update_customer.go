@@ -1,8 +1,11 @@
 package customers
 
 import (
+	"fmt"
 	"github.com/Singh555/mycms/common/helper"
+	"mime/multipart"
 	"net/http"
+	"os"
 
 	"github.com/Singh555/mycms/common/models"
 	"github.com/gin-gonic/gin"
@@ -14,7 +17,8 @@ type UpdateCustomerRequestBody struct {
 	LastName  string `form:"last_name"`
 	Email     string `form:"email" binding:"email"`
 	//Mobile    string `json:"mobile"`
-	Address string `form:"address"` //use json when request from postman is json data
+	Address string                `form:"address"` //use json when request from postman is json data
+	Avatar  *multipart.FileHeader `form:"avatar"`
 }
 
 func (h handler) UpdateCustomer(c *gin.Context) {
@@ -48,17 +52,37 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
+	var avatar string
+	var oldAvatar string
+	if body.Avatar != nil {
+		avatar = helper.UploadImageWithGin(c, body.Avatar, "/uploads/")
+	}
+
+	fmt.Println("size of image " + string(body.Avatar.Size))
+
 	customer.FirstName = body.FirstName
 	customer.LastName = body.LastName
 	customer.Email = body.Email
 	//customer.Mobile = body.Mobile
 	customer.Address = body.Address
+	if avatar != "error" {
+		oldAvatar = customer.Avatar
+		customer.Avatar = avatar
+	}
 	result := h.DB.Save(&customer)
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while updating customer data", "error": result.Error})
-
+		if helper.DoesFileExist(".." + avatar) {
+			os.Remove(avatar)
+		}
 		return
+	} else {
+		if helper.DoesFileExist(".." + oldAvatar) {
+			os.Remove(".." + oldAvatar)
+		}
+		//os.Remove(oldAvatar)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "customer data updated successfully", "data": &customer})
+	return
 }

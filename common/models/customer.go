@@ -15,4 +15,5 @@ type Customer struct {
 	Address    string `json:"address"`
 	Password   string `json:"password"`
 	Status     string `json:"status" gorm:"default:ACTIVE"`
+	Avatar     string `json:"avatar"`
 }

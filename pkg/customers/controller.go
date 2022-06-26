@@ -6,10 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
+//creating a handler for gorm instance
 type handler struct {
 	DB *gorm.DB
 }
 
+//function to register customer module routes
 func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 	h := &handler{
 		DB: db,

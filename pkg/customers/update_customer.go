@@ -3,6 +3,7 @@ package customers
 import (
 	"fmt"
 	"github.com/Singh555/mycms/common/helper"
+	log "github.com/sirupsen/logrus"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+//structure to parse the customer update request body
 type UpdateCustomerRequestBody struct {
 	Id        int64  `form:"id" binding:"required"`
 	FirstName string `form:"first_name"`
@@ -20,6 +22,8 @@ type UpdateCustomerRequestBody struct {
 	Address string                `form:"address"` //use json when request from postman is json data
 	Avatar  *multipart.FileHeader `form:"avatar"`
 }
+
+//function to update customer data
 
 func (h handler) UpdateCustomer(c *gin.Context) {
 
@@ -41,6 +45,7 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 	// getting request's body
 
 	if err := c.ShouldBind(&body); err != nil {
+		log.Error(err)
 		c.JSON(http.StatusBadRequest, helper.ErrorResponse(err))
 		return
 	}
@@ -48,6 +53,7 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 	var customer models.Customer
 
 	if result := h.DB.First(&customer, id); result.Error != nil {
+		log.Error(result.Error)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while getting customer data", "error": result.Error})
 		return
 	}
@@ -71,6 +77,7 @@ func (h handler) UpdateCustomer(c *gin.Context) {
 	}
 	result := h.DB.Save(&customer)
 	if result.Error != nil {
+		log.Error(result.Error)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "error while updating customer data", "error": result.Error})
 		if helper.DoesFileExist(".." + avatar) {
 			os.Remove(avatar)

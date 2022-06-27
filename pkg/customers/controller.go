@@ -1,6 +1,7 @@
 package customers
 
 import (
+	"github.com/Singh555/mycms/common/middlewares"
 	"github.com/gin-gonic/gin"
 
 	"gorm.io/gorm"
@@ -17,12 +18,25 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 		DB: db,
 	}
 
-	routes := r.Group("/customer")
-	routes.POST("/add", h.AddCustomer)
-	routes.GET("/", h.GetCustomers)
-	routes.GET("/:id", h.GetCustomer)
+	api := r.Group("/api")
+	{
+		routes := api.Group("/auth")
+		{
+			routes.POST("/register", h.AddCustomer)
+			routes.POST("/login", h.LoginCustomer)
 
-	routes.PUT("/update/", h.UpdateCustomer)
-	routes.DELETE("/delete/:id", h.Deletecustomer)
-	routes.POST("/login", h.LoginCustomer)
+		}
+		//secured routes request must have a jwt token to access these endpoints
+
+		secured := api.Group("/customer").Use(middlewares.Auth())
+		{
+			secured.GET("list/", h.GetCustomers)
+			secured.GET("/:id", h.GetCustomer)
+			secured.POST("profile/", h.GetProfile)
+			secured.PUT("/update/", h.UpdateCustomer)
+			secured.DELETE("/delete/:id", h.Deletecustomer)
+		}
+
+	}
+
 }

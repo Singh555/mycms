@@ -3,6 +3,7 @@ package middlewares
 import (
 	"github.com/Singh555/mycms/common/auth"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func Auth() gin.HandlerFunc {
@@ -15,7 +16,7 @@ func Auth() gin.HandlerFunc {
 		}
 		err := auth.ValidateToken(tokenString)
 		if err != nil {
-			context.JSON(401, gin.H{"error": err.Error()})
+			context.JSON(http.StatusGone, gin.H{"error": err.Error()})
 			context.Abort()
 			return
 		}

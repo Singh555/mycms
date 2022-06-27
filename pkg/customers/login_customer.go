@@ -28,14 +28,15 @@ func (h handler) LoginCustomer(context *gin.Context) {
 		return
 	}
 	fmt.Println(request.Mobile)
-	// check if email exists and password is correct
+	// check if customer exists
 	record := h.DB.Order("id DESC").Where("mobile = ?", request.Mobile).First(&user)
 	if record.Error != nil {
 		log.Error(record.Error)
-		context.JSON(http.StatusInternalServerError, gin.H{"error": record.Error})
+		context.JSON(http.StatusUnprocessableEntity, gin.H{"error": record.Error})
 		context.Abort()
 		return
 	}
+	// check if password is correct
 	credentialError := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password))
 
 	if credentialError != nil {
@@ -44,7 +45,7 @@ func (h handler) LoginCustomer(context *gin.Context) {
 		context.Abort()
 		return
 	}
-	tokenString, err := auth.GenerateJWT(user.Email, user.Mobile)
+	tokenString, err := auth.GenerateJWT(user.ID, user.Mobile, user.Email)
 	if err != nil {
 		log.Error(err.Error())
 		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

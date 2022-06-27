@@ -11,12 +11,17 @@ import (
 )
 
 //function to get single customer data  by id
-func (h handler) GetCustomer(c *gin.Context) {
-	id := c.Param("id")
-
+func (h handler) GetProfile(c *gin.Context) {
+	//id := c.Param("id")
+	var id uint
 	if auth.UserJwtData.Id == 0 {
 		fmt.Println("user id getting failed from jwt claims")
 		log.Error("user id getting failed from jwt claims")
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Please login", "error": "unauthorized access"})
+		return
+	} else {
+		id = auth.UserJwtData.Id
+
 	}
 	var customer models.Customer
 
